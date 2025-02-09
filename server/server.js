@@ -3,8 +3,6 @@ const cors         = require("cors");
 const app          = express(); 
 const rootEndpoint = require("./routes/index.js"); 
 
-require("dotenv").config();
-
 app.use(express.json());
 app.use(cors({ 
     origin: "*", 
