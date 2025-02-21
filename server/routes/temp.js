@@ -1,23 +1,18 @@
 const express = require("express");
-const aws     = require("aws-sdk");
-const asyncFS = require("fs").promises;
 const fs      = require("fs"); 
+const asyncFS = require("fs").promises;
 const path    = require("path");
 const router  = express.Router(); 
 
-const { retrieveMediaUsage, retrieveJobs } = require("../logger"); 
-
 require("dotenv").config();
 
-aws.config = {
-    region: "us-east-1", 
-    accessKeyId: process.env.AWS_S3_KEY, 
-    secretAccessKey: process.env.AWS_S3_SECRET
-}; 
+// Currently, I am utilizing the analyze music API endpoints to fetch json data for tracks 
+// I request for. For the most part with the implementation, I followed the documentation:
+// https://docs.dolby.io/media-apis/docs/introduction-to-media-processing and 
+// I followed this tutorial https://docs.dolby.io/media-apis/docs/quick-start-to-analyzing-music 
 
-const s3         = new aws.S3();
-const bucketName = "vibemesh"; 
-
+// First, for me to be able to utilize the analyze music endpoints, I have to first send a 
+// POST request for the authentication access token via /auth/token endpoint
 const getAccessToken = async() => {
     try {
         const auth     = Buffer.from(`${process.env.TRACK_ANALYZE_KEY}:${process.env.TRACK_ANALYZE_SECRET}`).toString("base64"); 
@@ -48,7 +43,8 @@ const getAccessToken = async() => {
     }
 }; 
 
-// Assumes it exists in the directory 
+// Within my repo, I am testing a sample track and retrieving its path to get the mp3 file 
+// for the endpoints that will need both the trackname and track mp3  
 const retrieveTrackandPath = async() => {
     try {   
         const trackName = "ItJustFeelsGood";
@@ -62,6 +58,9 @@ const retrieveTrackandPath = async() => {
     }
 }; 
 
+// I am utilizing this endpoint to upload my mp3 file via a POST request, but first I need to 
+// access the cloud url that I need to upload my mp3 file to 
+// https://docs.dolby.io/media-apis/reference/media-input-post
 const retrieveUploadURL = async(
     accessToken, 
     trackName 
@@ -91,6 +90,10 @@ const retrieveUploadURL = async(
     } 
 }; 
 
+// After I get my url to the cloud, I utilize this URL to create a PUT request where 
+// I upload the actual mp3 file which my program is able to find its path via 
+// the method I have implemented earlier 
+// https://docs.dolby.io/media-apis/reference/media-input-post
 const uploadTrackToCloud = async(
     accessToken,    
     trackName, 
@@ -112,13 +115,16 @@ const uploadTrackToCloud = async(
         if (!response.ok) {
             throw new Error(`Status: ${response.status}`); 
         }
-        // console.log("File Uploaded:", response); 
+        console.log("File Uploaded:", response); 
 
     } catch (error) {
         console.log(error); 
     }
 }; 
 
+// Now, I have uploaded the input file that the API will analyze and its time for me to 
+// produce a job ID with this POST request so I can retrieve a response 
+// https://docs.dolby.io/media-apis/reference/media-analyze-music-post
 const getTrackJobID = async(
     accessToken, 
     trackName
@@ -127,7 +133,7 @@ const getTrackJobID = async(
         const response = await fetch("https://api.dolby.com/media/analyze/music", {
             method: "POST", 
             body: JSON.stringify({
-                input: `dlb://vibemesh/${trackName}.mp3`,
+                input: `dlb://vibemesh/${trackName}.mp3`, 
                 output: `dlb://vibemesh/${trackName}.json`
             }), 
             headers: {
@@ -150,6 +156,9 @@ const getTrackJobID = async(
     }
 }; 
 
+// I utilize this endpoint via a GET request to check up on my the status of my job and 
+// inspect whether it has successful been processed indicating that I am able to retrieve the data I needed
+// https://docs.dolby.io/media-apis/reference/media-analyze-music-get
 const getTrackAnalysis = async(
     accessToken, 
     jobID
@@ -170,60 +179,14 @@ const getTrackAnalysis = async(
         const json = await response.json(); 
         console.log(json); 
         
+        // Polling implementation, where I call every 3000 ms to check on the status 
+        // However, the status remains stuck on running at 0% until it stops by giving 
+        // an failure status, which is odd since the jobID and previous requests return a 200 
+        // status indicating it being valid 
         if (json.status !== "Success") {
             setTimeout(() => getTrackAnalysis(accessToken, jobID), 3000);
         }
         
-    } catch (error) {
-        console.log(error); 
-    }
-}; 
-
-const retrieveDownloadURL = async(
-    accessToken, 
-    trackName
-) => {
-    try {
-        const response = fetch("https://api.dolby.com/media/output", {
-            method: "POST", 
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }, 
-            body: JSON.stringify({
-                output: `dlb://vibemesh/${trackName}.json`
-            })
-        }); 
-
-        if (!response.ok) {
-            throw new Error(`Status ${response.status}`); 
-        }
-
-        const url = await response.json();
-
-        return url; 
-    } catch (error) {
-        console.log(error); 
-    }
-}; 
-
-const downloadAnalysis = async(
-    accessToken, 
-    trackName 
-) => {
-    try {
-        const url = await retrieveDownloadURL(accessToken, trackName); 
-        const endpoint = url.url; 
-    
-        const response = await fetch(endpoint, {
-            method: "GET"
-        });
-
-        if (!response.ok) {
-            throw new Error(`status: ${response.status}`); 
-        }
-
     } catch (error) {
         console.log(error); 
     }
@@ -234,10 +197,10 @@ router.get("/", async(req, res) => {
     const accessToken = await getAccessToken(); 
 
     uploadTrackToCloud(accessToken, trackName, trackPath); 
-    
     const jobID = await getTrackJobID(accessToken); 
     console.log("JOB_ID", jobID);
 
+    // wait until the data for the analysis is returned, but it is never for some reason...
     await getTrackAnalysis(accessToken, jobID);
 }); 
 
