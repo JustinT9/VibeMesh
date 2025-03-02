@@ -99,6 +99,7 @@ const uploadTrackToCloud = async(
     try {
         const requestUploadURL = await retrieveUploadURL(accessToken, trackName); 
         const urlEndpoint      = requestUploadURL.url;   
+        const readable         = fs.createReadStream(trackPath); 
 
         const response = await fetch(urlEndpoint, {
             method: "PUT", 
@@ -106,12 +107,13 @@ const uploadTrackToCloud = async(
                 "Content-Type": "application/octet-stream", 
                 "Content-Length": fs.statSync(trackPath).size
             }, 
-            body: fs.createReadStream(trackPath)
+            body: readable 
         }); 
 
         if (!response.ok) {
             throw new Error(`Status: ${response.status}`); 
         }
+
         // console.log("File Uploaded:", response); 
 
     } catch (error) {
@@ -192,15 +194,18 @@ const retrieveDownloadURL = async(
                 "Accept": "application/json"
             }, 
             body: JSON.stringify({
-                output: `dlb://vibemesh/${trackName}.json`
+                url: `dlb://vibemesh/${trackName}.mp3`
             })
         }); 
+        console.log(await response);
+        console.log(await response.urlList) 
 
         if (!response.ok) {
             throw new Error(`Status ${response.status}`); 
         }
 
         const url = await response.json();
+        console.log(url);
 
         return url; 
     } catch (error) {
@@ -224,6 +229,8 @@ const downloadAnalysis = async(
             throw new Error(`status: ${response.status}`); 
         }
 
+        console.log(response); 
+
     } catch (error) {
         console.log(error); 
     }
@@ -233,12 +240,13 @@ router.get("/", async(req, res) => {
     const { trackName, trackPath } = await retrieveTrackandPath(); 
     const accessToken = await getAccessToken(); 
 
-    uploadTrackToCloud(accessToken, trackName, trackPath); 
-    
-    const jobID = await getTrackJobID(accessToken); 
-    console.log("JOB_ID", jobID);
+    // uploadTrackToCloud(accessToken, trackName, trackPath); 
 
-    await getTrackAnalysis(accessToken, jobID);
+    // const jobID = await getTrackJobID(accessToken); 
+    // console.log("JOB_ID", jobID);
+
+    // await getTrackAnalysis(accessToken, jobID);
+    // downloadAnalysis(accessToken, trackName); 
 }); 
 
 module.exports = router; 
