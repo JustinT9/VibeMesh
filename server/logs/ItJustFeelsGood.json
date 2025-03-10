@@ -1,0 +1,66 @@
+{
+    "media_info": {
+        "container": {
+            "kind": "none",
+            "duration": 124.839,
+            "bitrate": 320000,
+            "size": 5133558
+        },
+        "audio": {
+            "codec": "mp3",
+            "channels": 2,
+            "sample_rate": 44100,
+            "duration": 124.83918299319728,
+            "bitrate": 320000
+        }
+    },
+    "processed_region": {
+        "start": 0.0,
+        "end": 124.84,
+        "audio": {
+            "music": {
+                "percentage": 100.0,
+                "num_sections": 1,
+                "sections": [
+                    {
+                        "section_id": "mu_1",
+                        "start": 0.0,
+                        "duration": 123.84,
+                        "loudness": -6.31,
+                        "bpm": 150.0,
+                        "key": [
+                            [
+                                "F major",
+                                0.64
+                            ]
+                        ],
+                        "genre": [
+                            [
+                                "hip-hop",
+                                0.32
+                            ],
+                            [
+                                "electronic",
+                                0.28
+                            ],
+                            [
+                                "indie",
+                                0.1
+                            ]
+                        ],
+                        "instrument": [
+                            [
+                                "synth",
+                                0.19
+                            ],
+                            [
+                                "drums",
+                                0.05
+                            ]
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

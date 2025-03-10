@@ -21,6 +21,18 @@ function HomePage() {
 
     }; 
 
+    const analyzeTrack = async() => {
+        try {
+            const response = await fetch("http://localhost:5000/api/track-analyze/", {
+                method: "GET"
+            }); 
+
+        } catch (error) {
+            console.log(error); 
+        }
+    }; 
+
+    analyzeTrack(); 
     return (
         <>
             <form action={uploadTrack}>

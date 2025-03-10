@@ -1,45 +1,37 @@
-const express = require("express");
-const aws     = require("aws-sdk");
-const asyncFS = require("fs").promises;
-const fs      = require("fs"); 
-const path    = require("path");
-const router  = express.Router(); 
+const express        = require("express");
+const path           = require("path");
+const router         = express.Router(); 
+const fs             = require("fs"); 
+const asyncFS        = require("fs").promises;
+const { pipeline }   = require("stream"); 
+const { promisify }  = require("util");
+const streamPipeline = promisify(pipeline); 
 
 const { retrieveMediaUsage, retrieveJobs } = require("../logger"); 
 
 require("dotenv").config();
-
-aws.config = {
-    region: "us-east-1", 
-    accessKeyId: process.env.AWS_S3_KEY, 
-    secretAccessKey: process.env.AWS_S3_SECRET
-}; 
-
-const s3         = new aws.S3();
-const bucketName = "vibemesh"; 
 
 const getAccessToken = async() => {
     try {
         const auth     = Buffer.from(`${process.env.TRACK_ANALYZE_KEY}:${process.env.TRACK_ANALYZE_SECRET}`).toString("base64"); 
         const response = await fetch("https://api.dolby.io/v1/auth/token", {
             method: "POST", 
-            body: new URLSearchParams({
-                grant_type: "client_credentials", 
-                expires_in: 86400 
-            }), 
             headers: {
+                "Authorization": `Basic ${auth}`,
                 "Accept": "application/json", 
                 "Cache-Control": "no-cache", 
-                "Content-Type": "application/x-www-form-urlencoded", 
-                "Authorization": `Basic ${auth}`
-            }
+                "Content-Type": "application/x-www-form-urlencoded" 
+            }, 
+            body: new URLSearchParams({
+                grant_type: "client_credentials", 
+            }) 
         }); 
 
         if (!response.ok) {
             throw new Error(`status: ${response.status}`); 
         }
     
-        const json = await response.json(); 
+        const json        = await response.json(); 
         const accessToken = json.access_token;
         
         return accessToken; 
@@ -70,9 +62,9 @@ const retrieveUploadURL = async(
         const response = await fetch("https://api.dolby.com/media/input", {
             method: "POST", 
             headers: {
-                "authorization": `Bearer ${accessToken}`, 
-                "Content-Type": "application/json", 
-                "Accept": "application/json"
+                "Authorization": `Bearer ${accessToken}`, 
+                "Accept": "application/json", 
+                "Content-Type": "application/json" 
             }, 
             body: JSON.stringify({
                 url: `dlb://vibemesh/${trackName}.mp3`
@@ -97,17 +89,20 @@ const uploadTrackToCloud = async(
     trackPath
 ) => {
     try {
-        const requestUploadURL = await retrieveUploadURL(accessToken, trackName); 
-        const urlEndpoint      = requestUploadURL.url;   
-        const readable         = fs.createReadStream(trackPath); 
+        const requestUploadURL    = await retrieveUploadURL(accessToken, trackName); 
+        const endpoint            = requestUploadURL.url;   
+        const readableTrackStream = fs.createReadStream(trackPath); 
+        const trackStats          = fs.statSync(trackPath); 
 
-        const response = await fetch(urlEndpoint, {
+        console.log("ENDPOINT:", endpoint); 
+
+        const response = await fetch(endpoint, {
             method: "PUT", 
             headers: {
                 "Content-Type": "application/octet-stream", 
-                "Content-Length": fs.statSync(trackPath).size
+                "Content-Length": trackStats.size
             }, 
-            body: readable 
+            body: readableTrackStream 
         }); 
 
         if (!response.ok) {
@@ -128,23 +123,25 @@ const getTrackJobID = async(
     try {
         const response = await fetch("https://api.dolby.com/media/analyze/music", {
             method: "POST", 
-            body: JSON.stringify({
-                input: `dlb://vibemesh/${trackName}.mp3`,
-                output: `dlb://vibemesh/${trackName}.json`
-            }), 
             headers: {
                 "Authorization": `Bearer ${accessToken}`, 
                 "Accept": "application/json", 
                 "Content-Type": "application/json"
-            }
+            }, 
+            body: JSON.stringify({
+                input: `dlb://vibemesh/${trackName}.mp3`,
+                output: `dlb://vibemesh/${trackName}.json`
+            }) 
         }); 
 
         if (!response.ok) {
             throw new Error(`status: ${response.status}`); 
         }
 
-        const json = await response.json(); 
+        const json  = await response.json(); 
+        // console.log(response); 
         const jobID = json.job_id; 
+        // console.log(jobID); 
 
         return jobID; 
     } catch (error) {
@@ -160,8 +157,9 @@ const getTrackAnalysis = async(
         const response = await fetch(`https://api.dolby.com/media/analyze/music?job_id=${jobID}`, {
             method: "GET", 
             headers: {
-                accept: "application/json", 
-                authorization: `Bearer ${accessToken}`
+                "Authorization": `Bearer ${accessToken}`,
+                "Accept": "application/json", 
+                "Content-Type": "application/json"
             }
         }); 
 
@@ -172,8 +170,10 @@ const getTrackAnalysis = async(
         const json = await response.json(); 
         console.log(json); 
         
-        if (json.status !== "Success") {
-            setTimeout(() => getTrackAnalysis(accessToken, jobID), 3000);
+        if (json.status !== "Success" || 
+            json.status !== "Failed" || 
+            json.status !== "Cancelled") {
+            setTimeout(async() => await getTrackAnalysis(accessToken, jobID), 10000);
         }
         
     } catch (error) {
@@ -186,7 +186,7 @@ const retrieveDownloadURL = async(
     trackName
 ) => {
     try {
-        const response = fetch("https://api.dolby.com/media/output", {
+        const response = await fetch("https://api.dolby.com/media/output", {
             method: "POST", 
             headers: {
                 "Authorization": `Bearer ${accessToken}`,
@@ -194,18 +194,15 @@ const retrieveDownloadURL = async(
                 "Accept": "application/json"
             }, 
             body: JSON.stringify({
-                url: `dlb://vibemesh/${trackName}.mp3`
+                url: `dlb://vibemesh/${trackName}.json`
             })
         }); 
-        console.log(await response);
-        console.log(await response.urlList) 
 
         if (!response.ok) {
             throw new Error(`Status ${response.status}`); 
         }
 
         const url = await response.json();
-        console.log(url);
 
         return url; 
     } catch (error) {
@@ -218,18 +215,26 @@ const downloadAnalysis = async(
     trackName 
 ) => {
     try {
-        const url = await retrieveDownloadURL(accessToken, trackName); 
-        const endpoint = url.url; 
+        const downloadURL = await retrieveDownloadURL(accessToken, trackName); 
+        const endpoint    = downloadURL.url;
+        const outputPath  = path.resolve(__dirname, "..", "logs", `${trackName}.json`);
     
-        const response = await fetch(endpoint, {
-            method: "GET"
-        });
+        const response = await fetch(endpoint);
 
         if (!response.ok) {
             throw new Error(`status: ${response.status}`); 
-        }
+        } 
 
-        console.log(response); 
+        fs.open(outputPath, "w+", (error, f) => { 
+            if (error) {
+                return console.err(error); 
+            }; 
+
+            console.log("File opened!"); 
+        });
+
+        await streamPipeline(response.body, fs.createWriteStream(outputPath)); 
+        console.log(`${trackName}.json downloaded!`); 
 
     } catch (error) {
         console.log(error); 
@@ -237,16 +242,16 @@ const downloadAnalysis = async(
 }; 
 
 router.get("/", async(req, res) => {
-    const { trackName, trackPath } = await retrieveTrackandPath(); 
     const accessToken = await getAccessToken(); 
+    const { trackName, trackPath } = await retrieveTrackandPath(); 
 
     // uploadTrackToCloud(accessToken, trackName, trackPath); 
 
-    // const jobID = await getTrackJobID(accessToken); 
-    // console.log("JOB_ID", jobID);
+    // const jobID = await getTrackJobID(accessToken, trackName); 
+    // await getTrackAnalysis(accessToken, jobID); 
+    await downloadAnalysis(accessToken, trackName);  
 
-    // await getTrackAnalysis(accessToken, jobID);
-    // downloadAnalysis(accessToken, trackName); 
+    // retrieveJobs(accessToken, "2025-03-01T00:00:01Z", "2025-03-05T00:00:01Z"); 
 }); 
 
-module.exports = router; 
+module.exports = router;  
