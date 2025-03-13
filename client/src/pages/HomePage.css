@@ -1,0 +1,14 @@
+.dragAndDropZone {
+    font-size: 1.5em; 
+    text-align: center;
+    height: 350px; 
+    width: 350px; 
+    border-style: dashed;
+    position: absolute; 
+    top: 18%; 
+    left: 35%;
+    display: flex; 
+    justify-content: center;
+    align-items: center; 
+    flex-direction: column;
+}

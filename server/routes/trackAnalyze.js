@@ -245,10 +245,10 @@ router.get("/", async(req, res) => {
     const accessToken = await getAccessToken(); 
     const { trackName, trackPath } = await retrieveTrackandPath(); 
 
-    // uploadTrackToCloud(accessToken, trackName, trackPath); 
+    uploadTrackToCloud(accessToken, trackName, trackPath); 
 
-    // const jobID = await getTrackJobID(accessToken, trackName); 
-    // await getTrackAnalysis(accessToken, jobID); 
+    const jobID = await getTrackJobID(accessToken, trackName); 
+    await getTrackAnalysis(accessToken, jobID); 
     await downloadAnalysis(accessToken, trackName);  
 
     // retrieveJobs(accessToken, "2025-03-01T00:00:01Z", "2025-03-05T00:00:01Z"); 
