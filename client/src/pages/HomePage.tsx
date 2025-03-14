@@ -13,24 +13,15 @@ function HomePage() {
             }); 
 
             console.log(response); 
+            if (!response.ok) {
+                throw new Error(`status: ${response.status}`); 
+            }
 
         } catch (error) {
             console.log(error); 
         }
     }; 
 
-    // const analyzeTrack = async() => {
-    //     try {
-    //         const response = await fetch("http://localhost:5000/api/track-analyze/", {
-    //             method: "GET"
-    //         }); 
-
-    //     } catch (error) {
-    //         console.log(error); 
-    //     }
-    // }; 
-
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
     const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault(); 
         
@@ -69,7 +60,6 @@ function HomePage() {
         }
     }; 
 
-    // analyzeTrack(); 
     return (
         <>  
             <div className="dragAndDropZone"
@@ -88,7 +78,6 @@ function HomePage() {
                     <button type="submit">Submit</button>
                 </form>
             </div>
-            
         </>
     )
 }

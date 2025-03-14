@@ -1,5 +1,4 @@
 const express = require("express"); 
-const fs      = require("fs"); 
 const path    = require("path"); 
 const router  = express.Router();
 
@@ -15,10 +14,46 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage }); 
 
-router.post("/", upload.single("trackFile"), async(req, res) => {  
-    console.log(req.file);  
+  const analyzeTrack = async(
+    trackName
+  ) => {
+    try {
+        const response = await fetch("http://localhost:5000/api/track-analyze/", {
+            method: "GET"
+        }); 
 
-    res.sendStatus(200); 
+        if (!response.ok) {
+            throw new Error(`status: ${response.status}`); 
+        }
+
+        return response; 
+
+    } catch (error) {
+        console.log(error); 
+    }
+}; 
+
+router.post("/", upload.single("trackFile"), async(req, res) => {  
+    try {
+        const file = req.file; 
+        if (!file) {
+            throw new Error("error"); 
+        }
+
+        const trackName = file.originalname.split(".")[0]; 
+        const analysis  = analyzeTrack(trackName); 
+
+        if (!analysis.ok) {
+            throw new Error("error"); 
+        }
+        
+        res.status(200);  
+
+    } catch (error) {
+        console.log(error); 
+        res.status(500); 
+    }
+    
 }); 
 
 module.exports = router;
