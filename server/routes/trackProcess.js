@@ -14,20 +14,25 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage }); 
 
-  const analyzeTrack = async(
+const analyzeTrack = async(
     trackName
-  ) => {
+) => {
     try {
-        const response = await fetch("http://localhost:5000/api/track-analyze/", {
-            method: "GET"
+        const response = await fetch(`http://localhost:5000/api/track-analyze/${trackName}`, {
+            method: "GET", 
+            headers: {
+                "Accept": "application/json", 
+            }
         }); 
 
         if (!response.ok) {
             throw new Error(`status: ${response.status}`); 
         }
 
-        return response; 
+        const json = await response.json(); 
+        // console.log(json); 
 
+        return json; 
     } catch (error) {
         console.log(error); 
     }
@@ -40,20 +45,15 @@ router.post("/", upload.single("trackFile"), async(req, res) => {
             throw new Error("error"); 
         }
 
-        const trackName = file.originalname.split(".")[0]; 
-        const analysis  = analyzeTrack(trackName); 
+        const trackName     = file.originalname.split(".")[0]; 
+        const trackAnalysis = await analyzeTrack(trackName); 
+        // console.log(trackAnalysis); 
 
-        if (!analysis.ok) {
-            throw new Error("error"); 
-        }
-        
-        res.status(200);  
-
+        res.status(200).send(trackAnalysis);  
     } catch (error) {
         console.log(error); 
-        res.status(500); 
+        res.status(500).json(error); 
     }
-    
 }); 
 
 module.exports = router;

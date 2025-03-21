@@ -1,15 +1,25 @@
-const express        = require("express");
-const path           = require("path");
-const router         = express.Router(); 
-const fs             = require("fs"); 
-const asyncFS        = require("fs").promises;
+const express = require("express");
+const path    = require("path");
+const router  = express.Router(); 
+const fs      = require("fs"); 
+const asyncFS = require("fs").promises;
+
 const { pipeline }   = require("stream"); 
-const { promisify }  = require("util");
+const { promisify }  = require("util");  
 const streamPipeline = promisify(pipeline); 
 
-const { retrieveMediaUsage, retrieveJobs } = require("../logger"); 
+const { 
+    doesTrackAnalysisExistinS3Bucket, 
+    uploadTrackAnalysisToS3Bucket, 
+    getTrackAnalysisFromS3Bucket
+} = require("../utilities/S3"); 
 
-require("dotenv").config();
+const { 
+    retrieveMediaUsage, 
+    retrieveJobs 
+} = require("../logger"); 
+
+require("dotenv").config(); 
 
 const getAccessToken = async() => {
     try {
@@ -25,7 +35,7 @@ const getAccessToken = async() => {
             body: new URLSearchParams({
                 grant_type: "client_credentials", 
             }) 
-        }); 
+        });  
 
         if (!response.ok) {
             throw new Error(`status: ${response.status}`); 
@@ -41,16 +51,17 @@ const getAccessToken = async() => {
 }; 
 
 // Assumes it exists in the directory 
-const retrieveTrackandPath = async() => {
+const retrieveTrackPath = async(
+    trackName
+) => {
     try {   
-        const trackName = "ItJustFeelsGood";
-        const tracks    = await asyncFS.readdir("./tracks");
+        const tracks = await asyncFS.readdir("./uploads");
         if (tracks.includes(`${trackName}.mp3`)) {
-            const trackPath = path.resolve(__dirname, "..", "tracks", `${trackName}.mp3`);
-            return { trackName: trackName, trackPath: trackPath }; 
-        }
-    } catch (err) {
-        console.log(err); 
+            const trackPath = path.resolve(__dirname, "..", "uploads", `${trackName}.mp3`);
+            return trackPath;
+        } else throw new Error("Track does not exists in uploads"); 
+    } catch (error) {
+        console.log(error); 
     }
 }; 
 
@@ -95,7 +106,6 @@ const uploadTrackToCloud = async(
         const trackStats          = fs.statSync(trackPath); 
 
         console.log("ENDPOINT:", endpoint); 
-
         const response = await fetch(endpoint, {
             method: "PUT", 
             headers: {
@@ -110,13 +120,12 @@ const uploadTrackToCloud = async(
         }
 
         // console.log("File Uploaded:", response); 
-
     } catch (error) {
         console.log(error); 
     }
 }; 
 
-const getTrackJobID = async(
+const getTrackJobAnalysisID = async(
     accessToken, 
     trackName
 ) => {
@@ -149,7 +158,7 @@ const getTrackJobID = async(
     }
 }; 
 
-const getTrackAnalysis = async(
+const getTrackJobAnalysisStatus = async(
     accessToken, 
     jobID
 ) => {
@@ -173,9 +182,8 @@ const getTrackAnalysis = async(
         if (json.status !== "Success" || 
             json.status !== "Failed" || 
             json.status !== "Cancelled") {
-            setTimeout(async() => await getTrackAnalysis(accessToken, jobID), 10000);
+            setTimeout(async() => await getTrackJobAnalysisStatus(accessToken, jobID), 10000);
         }
-        
     } catch (error) {
         console.log(error); 
     }
@@ -210,7 +218,7 @@ const retrieveDownloadURL = async(
     }
 }; 
 
-const downloadAnalysis = async(
+const downloadTrackAnalysis = async(
     accessToken, 
     trackName 
 ) => {
@@ -227,32 +235,72 @@ const downloadAnalysis = async(
 
         fs.open(outputPath, "w+", (error, f) => { 
             if (error) {
-                return console.err(error); 
+                throw new Error(error); 
             }; 
-
             console.log("File opened!"); 
         });
 
         await streamPipeline(response.body, fs.createWriteStream(outputPath)); 
         console.log(`${trackName}.json downloaded!`); 
-
     } catch (error) {
         console.log(error); 
     }
 }; 
 
-router.get("/", async(req, res) => {
-    const accessToken = await getAccessToken(); 
-    const { trackName, trackPath } = await retrieveTrackandPath(); 
+const parseTrackAnalysis = async(
+    trackName
+) => {
+    try {
+        const analysisPath  = path.resolve(__dirname, "..", "logs", `${trackName}.json`); 
+        const data          = await asyncFS.readFile(analysisPath, { encoding: "utf-8" }); 
+        const trackAnalysis = JSON.parse(data); 
+        
+        const sections      = trackAnalysis["processed_region"]["audio"]["music"]["sections"][0]; 
+        const bpm           = sections["bpm"]; 
+        const keys          = sections["key"]; 
+        const genres        = sections["genre"];
+        const instrumentals = sections["instrument"]; 
 
-    uploadTrackToCloud(accessToken, trackName, trackPath); 
+        let trackAnalysisJSON = new Object();
 
-    const jobID = await getTrackJobID(accessToken, trackName); 
-    await getTrackAnalysis(accessToken, jobID); 
-    await downloadAnalysis(accessToken, trackName);  
+        trackAnalysisJSON["bpm"] = bpm; 
+        trackAnalysisJSON["keys"] = keys; 
+        trackAnalysisJSON["genres"] = genres; 
+        trackAnalysisJSON["instrumentals"] = instrumentals; 
 
-    // retrieveJobs(accessToken, "2025-03-01T00:00:01Z", "2025-03-05T00:00:01Z");
-     
+        return JSON.stringify(trackAnalysisJSON); 
+    } catch (error) {
+        console.log(error); 
+    }
+}
+
+router.get("/:trackName", async(req, res) => {
+    try {
+        const trackName              = req.params.trackName; 
+        const trackPath              = await retrieveTrackPath(trackName); 
+        const doesTrackAnalysisExist = await doesTrackAnalysisExistinS3Bucket(trackName); 
+        let parsedTrackAnalysis
+        if (!doesTrackAnalysisExist) {
+            const accessToken = await getAccessToken(); 
+            await uploadTrackToCloud(accessToken, trackName, trackPath); 
+
+            const jobID = await getTrackJobAnalysisID(accessToken, trackName); 
+            await getTrackJobAnalysisStatus(accessToken, jobID); 
+            await downloadTrackAnalysis(accessToken, trackName);  
+
+            parsedTrackAnalysis = await parseTrackAnalysis(trackName); 
+            await uploadTrackAnalysisToS3Bucket(trackName, trackAnalysis); 
+            // console.log("Uploaded analysis:", parsedTrackAnalysis); 
+        } else {
+            const data          = await getTrackAnalysisFromS3Bucket(trackName); 
+            parsedTrackAnalysis = JSON.parse(data.Body.toString("utf8")); 
+            // console.log("Analysis already exists:", parsedTrackAnalysis); 
+        }
+        res.status(200).send(parsedTrackAnalysis); 
+    } catch (error) {
+        res.status(500).json(error); 
+        console.log(error); 
+    }
 }); 
 
 module.exports = router;  
