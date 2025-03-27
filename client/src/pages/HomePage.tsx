@@ -15,9 +15,9 @@ function HomePage() {
             if (!response.ok) {
                 throw new Error(`status: ${response.status}`); 
             }
-
+            
+            console.log(response); 
             const json = await response.json(); 
-
             console.log(json); 
         } catch (error) {
             console.log(error); 
@@ -39,7 +39,7 @@ function HomePage() {
             console.error(`File Type must be audio/mpeg instead of ${type}`); 
             return;
         } 
-
+                
         console.log("Track File Dropped"); 
         const trackFileForm: FormData = new FormData();
 

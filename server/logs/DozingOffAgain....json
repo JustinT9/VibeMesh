@@ -1,0 +1,70 @@
+{
+    "media_info": {
+        "container": {
+            "kind": "none",
+            "duration": 158.014,
+            "bitrate": 320000,
+            "size": 6431695
+        },
+        "audio": {
+            "codec": "mp3",
+            "channels": 2,
+            "sample_rate": 44100,
+            "duration": 158.01469299886622,
+            "bitrate": 320000
+        }
+    },
+    "processed_region": {
+        "start": 0.0,
+        "end": 158.01,
+        "audio": {
+            "music": {
+                "percentage": 100.0,
+                "num_sections": 1,
+                "sections": [
+                    {
+                        "section_id": "mu_1",
+                        "start": 0.0,
+                        "duration": 157.44,
+                        "loudness": -6.76,
+                        "bpm": 125.0,
+                        "key": [
+                            [
+                                "Eb major",
+                                0.93
+                            ]
+                        ],
+                        "genre": [
+                            [
+                                "electronic",
+                                0.35
+                            ],
+                            [
+                                "dance",
+                                0.15
+                            ],
+                            [
+                                "electro",
+                                0.12
+                            ]
+                        ],
+                        "instrument": [
+                            [
+                                "synth",
+                                0.12
+                            ],
+                            [
+                                "drums",
+                                0.1
+                            ],
+                            [
+                                "guitar",
+                                0.08
+                            ]
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

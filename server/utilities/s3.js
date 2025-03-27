@@ -24,36 +24,46 @@ const s3 = new aws.S3();
 const doesTrackAnalysisExistinS3Bucket = async(
     trackName 
 ) => {
-    const exists = await s3.headObject({
-        Bucket: "vibemesh", 
-        Key: `${trackName}Analysis.json`
-    }).promise()
-      .then(
-        () => true, 
-        error => {    
-            console.log(error); 
-            if (error.code === "NotFound") {
-                return false; 
+    try {
+        console.log("In doesTrackAnalysisExistinS3Bucket()"); 
+        const exists = await s3.headObject({
+            Bucket: "vibemesh", 
+            Key: `${trackName}Analysis.json`
+        }).promise()
+        .then(
+            () => true, 
+            error => {    
+                // console.log(error); 
+                if (error.code === "NotFound") {
+                    return false; 
+                }
+                throw error; 
             }
-            throw error; 
-        }
-    )
-    return exists; 
+        )
+        return new Promise(resolve => resolve(exists)); 
+    } catch (error) {
+        console.log(error); 
+    } 
 }; 
 
 const uploadTrackAnalysisToS3Bucket = async(
     trackName, 
     trackAnalysisJSON 
 ) => {
-    try { 
-        await s3.upload({
+    try {
+        console.log("In uploadTrackAnalysisToS3Bucket()"); 
+        console.log(trackAnalysisJSON); 
+        const ret = await s3.upload({
             Bucket: "vibemesh",
             Key: `${trackName}Analysis.json`, 
             Body: trackAnalysisJSON
         }, (error, data) => {
+            console.log(error, data); 
             if (error) throw new Error(error); 
             else console.log(`successfully uploaded: ${data}`); 
         }).promise(); 
+
+        return new Promise(resolve => resolve(ret)); 
     } catch (error) {
         console.log(error); 
     }
@@ -63,12 +73,12 @@ const getTrackAnalysisFromS3Bucket = async(
     trackName 
 ) => {
     try {
+        console.log("In getTrackAnalysisFromS3Bucket()"); 
         const trackAnalysisData = await s3.getObject({
             Bucket: "vibemesh", 
             Key: `${trackName}Analysis.json`
         }).promise(); 
-
-        return trackAnalysisData; 
+        return new Promise(resolve => resolve(trackAnalysisData)); 
     } catch (error) {
         console.log(error); 
     }

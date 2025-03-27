@@ -1,0 +1,66 @@
+{
+    "media_info": {
+        "container": {
+            "kind": "none",
+            "duration": 73.952,
+            "bitrate": 320000,
+            "size": 3157783
+        },
+        "audio": {
+            "codec": "mp3",
+            "channels": 2,
+            "sample_rate": 44100,
+            "duration": 73.95265299744898,
+            "bitrate": 320000
+        }
+    },
+    "processed_region": {
+        "start": 0.0,
+        "end": 73.95,
+        "audio": {
+            "music": {
+                "percentage": 100.0,
+                "num_sections": 1,
+                "sections": [
+                    {
+                        "section_id": "mu_1",
+                        "start": 0.0,
+                        "duration": 73.44,
+                        "loudness": -11.13,
+                        "bpm": 80.0,
+                        "key": [
+                            [
+                                "C minor",
+                                0.55
+                            ]
+                        ],
+                        "genre": [
+                            [
+                                "electronic",
+                                0.24
+                            ],
+                            [
+                                "hip-hop",
+                                0.13
+                            ],
+                            [
+                                "chillout",
+                                0.12
+                            ]
+                        ],
+                        "instrument": [
+                            [
+                                "synth",
+                                0.24
+                            ],
+                            [
+                                "drums",
+                                0.05
+                            ]
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}
