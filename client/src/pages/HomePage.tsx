@@ -1,7 +1,20 @@
-import React, { useEffect, useState } from 'react'; 
+import React, { BaseSyntheticEvent, useCallback, useRef } from 'react'; 
+import { NavigateFunction, useNavigate } from 'react-router-dom';
+import { IoCloudUploadOutline } from "react-icons/io5";
 import "./HomePage.css"; 
 
+
 function HomePage() {
+    const navigate: NavigateFunction = useNavigate(); 
+
+    const formRef: React.RefObject<HTMLFormElement | null> = useRef(null); 
+    const mp3FileInputRef: React.RefObject<HTMLInputElement | null> = useRef(null); 
+    const handleClick: () => void | undefined = useCallback(() => mp3FileInputRef.current?.click(), []);
+    const handleChange: (e: BaseSyntheticEvent) => void | undefined = (e: BaseSyntheticEvent) => {
+        e.preventDefault(); 
+        formRef.current?.requestSubmit(); 
+    }; 
+
     const uploadTrack = async(trackFile: FormData): Promise<void> => {
         try {
             const trackFileInfo: FormDataEntryValue | undefined = trackFile.values().next().value; 
@@ -14,12 +27,10 @@ function HomePage() {
 
             if (!response.ok) {
                 throw new Error(`status: ${response.status}`); 
-            }
-            
-            console.log(response); 
-            const json = await response.json(); 
-            console.log(json); 
-        } catch (error) {
+            } 
+        
+            navigate("/trackanalysis"); 
+        } catch (error: Error | any) {
             console.log(error); 
         }
     }; 
@@ -67,17 +78,26 @@ function HomePage() {
             <div className="dragAndDropZone"
                 onDrop={(e) => handleDrop(e)}
                 onDragOver={(e) => handleDragover(e)}>
+                <IoCloudUploadOutline 
+                    size="2em"
+                    style={{ color: "#87CEEB" }}
+                />
                 Drag & Drop MP3 File 
                 <br/>
-                <h4>OR</h4>
-                <form action={uploadTrack}>
+                <p>or</p>
+                <button onClick={handleClick}>Browse Files</button>
+                <form 
+                    ref={formRef}
+                    action={uploadTrack}>
                     <input 
                         type="file"
                         id="trackFile"
                         name="trackFile"
                         accept="audio/.mp3"
+                        style={{ display: "none" }}
+                        ref={mp3FileInputRef}
+                        onChange={handleChange}
                     />
-                    <button type="submit">Submit</button>
                 </form>
             </div>
         </>
