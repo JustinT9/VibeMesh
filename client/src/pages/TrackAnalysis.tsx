@@ -1,20 +1,13 @@
 import { useEffect, useState } from "react";
-import { 
-    Instrumental,
-    Genre, 
-    Key, 
-    Track
-} from '../types/trackAnalysis';
+import { Track } from '../types/Track';
 import "./TrackAnalysis.css"; 
 
 function TrackAnalysis() {
-    const [track, setTrack] = useState<Track | null>(null); 
+    const [track, setTrack] = useState<Track>(); 
 
-    const getTrackAnalysis = async(
-        trackname: String
-    ): Promise<void> => {
+    const getTrackAnalysis = async(): Promise<any> => {
         try {
-            console.log(trackname); 
+            const trackname: string = localStorage.getItem("current-track") ?? ""; 
             const response: Response = await fetch(`http://localhost:5000/api/track-analyze/${trackname}`, {
                 method: "GET", 
                 headers: {
@@ -26,15 +19,19 @@ function TrackAnalysis() {
                 throw new Error(`status ${response.status}`); 
             }
 
-            const json: Promise<any> = await response.json(); 
-            return new Promise((resolve): void => resolve(json)); 
+            const json: Track = await response.json(); 
+            setTrack(prevTrack => ({...prevTrack, ...json})); 
+
+            console.log(track); 
+            return new Promise(resolve => resolve(0)); 
         } catch (error: Error | any) {
             console.log(error); 
         }  
     }
 
     const loadAnalysis = async() => {
-
+        await getTrackAnalysis(); 
+        console.log(track); 
     } 
 
     useEffect(() => {

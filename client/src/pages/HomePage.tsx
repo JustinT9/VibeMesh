@@ -7,15 +7,8 @@ import {
     NavigateFunction, 
     useNavigate 
 } from 'react-router-dom';
-import { 
-    IoCloudUploadOutline 
-} from "react-icons/io5";
-import { 
-    Instrumental,
-    Genre, 
-    Key, 
-    Track
-} from '../types/trackAnalysis';
+import { IoCloudUploadOutline } from "react-icons/io5";
+import { Track } from '../types/Track';
 import "./HomePage.css"; 
 
 function HomePage() {
@@ -54,8 +47,8 @@ function HomePage() {
                 throw new Error(`status: ${response.status}`); 
             } 
             
-            const json: Promise<any> = await response.json(); 
-            console.log(json); 
+            const track: Track = await response.json(); 
+            await setCurrentTrack(track.name);
 
             navigate("/trackanalysis"); 
         } catch (error: Error | any) {

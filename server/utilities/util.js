@@ -12,7 +12,7 @@ const retrieveTrackPath = async(
             const trackPath = path.resolve(__dirname, "..", "uploads", `${trackName}.mp3`);
             return new Promise(resolve => resolve(trackPath));
         } 
-    } catch (error) {
+    } catch (error) { 
         console.log(error); 
     }
 }; 
