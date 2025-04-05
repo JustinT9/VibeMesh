@@ -53,7 +53,8 @@ const uploadTrackAnalysisToS3Bucket = async(
     try {
         console.log("In uploadTrackAnalysisToS3Bucket()"); 
         console.log(trackAnalysisJSON); 
-        const ret = await s3.upload({
+
+        await s3.upload({
             Bucket: "vibemesh",
             Key: `${trackName}Analysis.json`, 
             Body: trackAnalysisJSON
@@ -63,7 +64,7 @@ const uploadTrackAnalysisToS3Bucket = async(
             else console.log(`successfully uploaded: ${data}`); 
         }).promise(); 
 
-        return new Promise(resolve => resolve(ret)); 
+        return new Promise(resolve => resolve(0)); 
     } catch (error) {
         console.log(error); 
     }

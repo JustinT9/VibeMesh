@@ -8,6 +8,13 @@
     "start": "node server.js",
     "dev": "nodemon -L server.js"
   },
+  "nodemonConfig": {
+    "verbose": true,
+    "ignore": [
+      "logs/*",
+      "uploads/*"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JustinT9/VibeMesh.git"
@@ -26,7 +33,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.13.0",
+    "music-metadata": "^11.0.3",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

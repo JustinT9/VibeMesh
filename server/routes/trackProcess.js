@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
 })
 const upload                               = multer({ storage: storage }); 
 const { doesTrackAnalysisExistinS3Bucket } = require("../utilities/S3"); 
-const { renameUploadedFile }               = require("../utilities/util"); 
+const { renameUploadedFile } = require("../utilities/util"); 
 
 const getTrackAnalysis = async(
     trackname
@@ -71,7 +71,7 @@ router.post("/", upload.single("trackFile"), async(req, res) => {
         if (!file) {
             throw new Error("error"); 
         }
-
+        
         const trackname              = await renameUploadedFile(file); 
         const doesTrackAnalysisExist = await doesTrackAnalysisExistinS3Bucket(trackname); 
         if (!doesTrackAnalysisExist) {

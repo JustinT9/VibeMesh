@@ -1,12 +1,25 @@
-import React, { BaseSyntheticEvent, useCallback, useRef } from 'react'; 
-import { NavigateFunction, useNavigate } from 'react-router-dom';
-import { IoCloudUploadOutline } from "react-icons/io5";
+import React, { 
+    BaseSyntheticEvent, 
+    useCallback, 
+    useRef 
+} from 'react'; 
+import { 
+    NavigateFunction, 
+    useNavigate 
+} from 'react-router-dom';
+import { 
+    IoCloudUploadOutline 
+} from "react-icons/io5";
+import { 
+    Instrumental,
+    Genre, 
+    Key, 
+    Track
+} from '../types/trackAnalysis';
 import "./HomePage.css"; 
-
 
 function HomePage() {
     const navigate: NavigateFunction = useNavigate(); 
-
     const formRef: React.RefObject<HTMLFormElement | null> = useRef(null); 
     const mp3FileInputRef: React.RefObject<HTMLInputElement | null> = useRef(null); 
     const handleClick: () => void | undefined = useCallback(() => mp3FileInputRef.current?.click(), []);
@@ -14,6 +27,18 @@ function HomePage() {
         e.preventDefault(); 
         formRef.current?.requestSubmit(); 
     }; 
+
+    const setCurrentTrack = async(
+        trackname: string
+    ): Promise<Number> => {
+        console.log("In setCurrentTrack()"); 
+        localStorage.setItem("current-track", trackname); 
+    
+        const isSuccess = localStorage.getItem("current-track") === trackname;
+        if (isSuccess) console.log(`Current track: ${trackname}`); 
+    
+        return new Promise(resolve => resolve(0)); 
+    }
 
     const uploadTrack = async(trackFile: FormData): Promise<void> => {
         try {
@@ -28,7 +53,10 @@ function HomePage() {
             if (!response.ok) {
                 throw new Error(`status: ${response.status}`); 
             } 
-        
+            
+            const json: Promise<any> = await response.json(); 
+            console.log(json); 
+
             navigate("/trackanalysis"); 
         } catch (error: Error | any) {
             console.log(error); 

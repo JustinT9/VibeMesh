@@ -9,14 +9,14 @@ const { promisify }  = require("util");
 const streamPipeline = promisify(pipeline); 
 
 const { 
+    retrieveTrackPath, 
+    getTrackMetadata
+} = require("../utilities/util"); 
+
+const { 
     uploadTrackAnalysisToS3Bucket, 
     getTrackAnalysisFromS3Bucket
 } = require("../utilities/S3"); 
-
-const { 
-    retrieveMediaUsage, 
-    retrieveJobs 
-} = require("../logger"); 
 
 require("dotenv").config(); 
 
@@ -49,24 +49,9 @@ const getAccessToken = async() => {
     }
 }; 
 
-const retrieveTrackPath = async(
-    trackName
-) => {
-    try {   
-        console.log("In retrieveTrackPath()"); 
-        const tracks = await asyncFS.readdir("./uploads");
-        if (tracks.includes(`${trackName}.mp3`)) {
-            const trackPath = path.resolve(__dirname, "..", "uploads", `${trackName}.mp3`);
-            return new Promise(resolve => resolve(trackPath));
-        } 
-    } catch (error) {
-        console.log(error); 
-    }
-}; 
-
 const retrieveUploadURL = async(
     accessToken, 
-    trackName 
+    trackname 
 ) => {
     try {
         console.log("In retrieveUploadURL()"); 
@@ -78,7 +63,7 @@ const retrieveUploadURL = async(
                 "Content-Type": "application/json" 
             }, 
             body: JSON.stringify({
-                url: `dlb://vibemesh/${trackName}.mp3`
+                url: `dlb://vibemesh/${trackname}.mp3`
             })
         }); 
 
@@ -95,12 +80,12 @@ const retrieveUploadURL = async(
 
 const uploadTrackToCloud = async(
     accessToken,    
-    trackName, 
+    trackname, 
     trackPath
 ) => {
     try {
         console.log("In uploadTrackToCloud()");
-        const requestUploadURL    = await retrieveUploadURL(accessToken, trackName); 
+        const requestUploadURL    = await retrieveUploadURL(accessToken, trackname); 
         const endpoint            = requestUploadURL.url;   
         const readableTrackStream = fs.createReadStream(trackPath); 
         const trackStats          = fs.statSync(trackPath); 
@@ -126,7 +111,7 @@ const uploadTrackToCloud = async(
 
 const getTrackJobAnalysisID = async(
     accessToken, 
-    trackName
+    trackname
 ) => {
     try {
         console.log("In getTrackJobAnalysisID()"); 
@@ -138,8 +123,8 @@ const getTrackJobAnalysisID = async(
                 "Content-Type": "application/json"
             }, 
             body: JSON.stringify({
-                input: `dlb://vibemesh/${trackName}.mp3`,
-                output: `dlb://vibemesh/${trackName}.json`
+                input: `dlb://vibemesh/${trackname}.mp3`,
+                output: `dlb://vibemesh/${trackname}.json`
             }) 
         }); 
 
@@ -178,6 +163,7 @@ const getTrackJobAnalysisStatus = async(
             
             const json = await response.json(); 
             status     = json.status; 
+            console.log(json); 
         } 
 
         return new Promise(resolve => resolve()); 
@@ -188,7 +174,7 @@ const getTrackJobAnalysisStatus = async(
 
 const retrieveDownloadURL = async(
     accessToken, 
-    trackName
+    trackname
 ) => {
     try {
         console.log("In retrieveDownloadURL()"); 
@@ -200,7 +186,7 @@ const retrieveDownloadURL = async(
                 "Accept": "application/json"
             }, 
             body: JSON.stringify({
-                url: `dlb://vibemesh/${trackName}.json`
+                url: `dlb://vibemesh/${trackname}.json`
             })
         }); 
 
@@ -217,13 +203,13 @@ const retrieveDownloadURL = async(
 
 const downloadTrackAnalysis = async(
     accessToken, 
-    trackName 
+    trackname 
 ) => {
     try {
         console.log("In downloadTrackAnalysis()"); 
-        const downloadURL = await retrieveDownloadURL(accessToken, trackName); 
+        const downloadURL = await retrieveDownloadURL(accessToken, trackname); 
         const endpoint    = downloadURL.url;
-        const outputPath  = path.resolve(__dirname, "..", "logs", `${trackName}.json`);
+        const outputPath  = path.resolve(__dirname, "..", "logs", `${trackname}.json`);
     
         const response = await fetch(endpoint);
         if (!response.ok) {
@@ -238,7 +224,7 @@ const downloadTrackAnalysis = async(
         });
 
         await streamPipeline(response.body, fs.createWriteStream(outputPath)); 
-        console.log(`${trackName}.json downloaded!`); 
+        console.log(`${trackname}.json downloaded!`); 
         return new Promise(resolve => resolve()); 
     } catch (error) {
         console.log(error); 
@@ -246,26 +232,26 @@ const downloadTrackAnalysis = async(
 };  
 
 const parseTrackAnalysis = async(
-    trackName
+    trackname
 ) => {
     try {
         console.log("In parseTrackAnalysis()"); 
-        const analysisPath  = path.resolve(__dirname, "..", "logs", `${trackName}.json`); 
+        const analysisPath  = path.resolve(__dirname, "..", "logs", `${trackname}.json`); 
         const data          = await asyncFS.readFile(analysisPath, { encoding: "utf-8" }); 
-        const trackAnalysis = JSON.parse(data); 
+        const trackAnalysis = JSON.parse(data);
         
-        const sections      = trackAnalysis["processed_region"]["audio"]["music"]["sections"][0]; 
-        const bpm           = sections["bpm"]; 
-        const keys          = sections["key"]; 
-        const genres        = sections["genre"];
-        const instrumentals = sections["instrument"]; 
-
-        let trackAnalysisJSON = new Object();
-
-        trackAnalysisJSON["bpm"] = bpm; 
-        trackAnalysisJSON["keys"] = keys; 
-        trackAnalysisJSON["genres"] = genres; 
-        trackAnalysisJSON["instrumentals"] = instrumentals; 
+        const trackMetadata     = await getTrackMetadata(trackname); 
+        const sections          = trackAnalysis["processed_region"]["audio"]["music"]["sections"][0]; 
+        const trackAnalysisJSON = {
+            name: trackname, 
+            ...trackMetadata, 
+            duration: sections["duration"], 
+            loudness: sections["loudness"], 
+            bpm: sections["bpm"], 
+            keys: sections["key"], 
+            genres: sections["genre"], 
+            instrumentals: sections["instrument"]
+        }; 
 
         console.log("analysis parsed..."); 
         return new Promise(resolve => resolve(JSON.stringify(trackAnalysisJSON))); 
@@ -279,6 +265,7 @@ router.get("/:trackname", async(req, res) => {
         const trackname           = req.params.trackname; 
         const data                = await getTrackAnalysisFromS3Bucket(trackname);
         const parsedTrackAnalysis = JSON.parse(data.Body.toString("utf8")); 
+
         res.status(200).json(parsedTrackAnalysis); 
     } catch (error) {
         console.log(error); 
@@ -288,19 +275,19 @@ router.get("/:trackname", async(req, res) => {
 
 router.post("/", async(req, res) => {
     try {
-        const trackName = req.body.trackname; 
-        const trackPath = await retrieveTrackPath(trackName); 
+        const trackname = req.body.trackname; 
+        const trackPath = await retrieveTrackPath(trackname); 
         
         const accessToken = await getAccessToken(); 
-        await uploadTrackToCloud(accessToken, trackName, trackPath); 
+        await uploadTrackToCloud(accessToken, trackname, trackPath); 
 
-        const jobID = await getTrackJobAnalysisID(accessToken, trackName); 
+        const jobID = await getTrackJobAnalysisID(accessToken, trackname); 
         await getTrackJobAnalysisStatus(accessToken, jobID); 
-        await downloadTrackAnalysis(accessToken, trackName);  
+        await downloadTrackAnalysis(accessToken, trackname);  
 
-        const parsedTrackAnalysis = await parseTrackAnalysis(trackName); 
-        await uploadTrackAnalysisToS3Bucket(trackName, parsedTrackAnalysis); 
-        res.status(201).json({ Message: "Resource Uploaded Successfully" }); 
+        const parsedTrackAnalysis = await parseTrackAnalysis(trackname);         
+        await uploadTrackAnalysisToS3Bucket(trackname, parsedTrackAnalysis); 
+        res.status(201).json(parsedTrackAnalysis); 
     } catch (error) {
         console.log(error); 
         res.status(500).json(error); 
