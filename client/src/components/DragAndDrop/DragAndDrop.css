@@ -3,6 +3,8 @@ p {
 }
 
 button {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600; 
     background-color: #87CEEB;
     height: 3em; 
     width: 10em;
@@ -23,7 +25,8 @@ button:active {
 
 .dragAndDropZone {
     background-color: rgb(225, 222, 222);
-    font-family: "Roboto", sans-serif;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600; 
     font-size: 1.5em; 
     text-align: center;
     height: 350px; 

@@ -1,6 +1,7 @@
 const fs   = require("fs").promises; 
 const path = require("path"); 
 const mm   = (async() => { return await import("music-metadata") })(); 
+const { inspect } = require("util"); 
 
 const retrieveTrackPath = async(
     trackName
@@ -50,9 +51,27 @@ const getTrackMetadata = async(
     return new Promise(resolve => resolve(trackMetadata)); 
 }; 
 
+const getTrackCoverImage = async(
+    trackname 
+) => {
+    console.log("In getTrackCoverImage()");
+    const trackpath = await retrieveTrackPath(trackname); 
+    const metadata  = await (await mm).parseFile(trackpath); 
+    const image     = (await mm).selectCover(metadata["common"]["picture"]); 
+
+    const trackCoverImageMetadata = {
+        format: image["format"], 
+        data: Buffer.from(image["data"]).toString("base64")
+    };
+
+    return new Promise(resolve => resolve(trackCoverImageMetadata)); 
+}
+
+
 module.exports = {
     retrieveTrackPath, 
     normalizeFilename, 
     renameUploadedFile, 
-    getTrackMetadata
+    getTrackMetadata, 
+    getTrackCoverImage 
 }

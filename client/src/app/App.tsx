@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from './pages/HomePage';
-import TrackAnalysis from './pages/TrackAnalysis';
-
+import HomePage from '../features/HomePage';
+import TrackAnalysis from '../features/TrackAnalysis';
 
 function App() {
   return (
