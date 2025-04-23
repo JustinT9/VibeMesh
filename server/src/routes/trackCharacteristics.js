@@ -1,7 +1,7 @@
 const express = require("express"); 
 const router  = express.Router(); 
 
-const { getTrackCoverImage } = require("../utilities/util"); 
+const { getTrackCoverImage } = require("../util/util"); 
 
 router.get("/cover-image/:trackname", async(req, res) => {
     try {

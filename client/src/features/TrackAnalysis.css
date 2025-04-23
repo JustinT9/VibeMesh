@@ -14,7 +14,8 @@ text {
 }
 
 .trackAnalysisPage {
-    background-color: #D8D8D8; 
+    /* background-color: #D8D8D8;  */
+    background-color: white;
     height: 95%; 
     width: 95%; 
     display: flex;
@@ -51,7 +52,6 @@ text {
 }
  
 .trackKeysAndLoudness {
-    /* background-color: white; */
     height: 33.3%; 
     width: 100%; 
     display: flex; 
@@ -60,6 +60,9 @@ text {
 }
 
 .trackPreview {
+    /* background-color: white; */
     height: 33.3%; 
     width: 100%; 
+    display: flex;
+    justify-content: center;
 }

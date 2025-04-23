@@ -13,8 +13,8 @@ const storage = multer.diskStorage({
     }
 })
 const upload                               = multer({ storage: storage }); 
-const { doesTrackAnalysisExistinS3Bucket } = require("../utilities/S3"); 
-const { renameUploadedFile } = require("../utilities/util"); 
+const { doesTrackAnalysisExistinS3Bucket } = require("../util/S3"); 
+const { renameUploadedFile } = require("../util/util"); 
 
 const getTrackAnalysis = async(
     trackname

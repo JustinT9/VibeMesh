@@ -1,14 +1,13 @@
 const fs   = require("fs").promises; 
 const path = require("path"); 
 const mm   = (async() => { return await import("music-metadata") })(); 
-const { inspect } = require("util"); 
 
 const retrieveTrackPath = async(
     trackName
 ) => {
     try {   
         console.log("In retrieveTrackPath()"); 
-        const tracks = await fs.readdir("./uploads");
+        const tracks = await fs.readdir(path.resolve(__dirname, "..", "uploads"));
         if (tracks.includes(`${trackName}.mp3`)) {
             const trackPath = path.resolve(__dirname, "..", "uploads", `${trackName}.mp3`);
             return new Promise(resolve => resolve(trackPath));
@@ -58,7 +57,7 @@ const getTrackCoverImage = async(
     const trackpath = await retrieveTrackPath(trackname); 
     const metadata  = await (await mm).parseFile(trackpath); 
     const image     = (await mm).selectCover(metadata["common"]["picture"]); 
-
+    
     const trackCoverImageMetadata = {
         format: image["format"], 
         data: Buffer.from(image["data"]).toString("base64")

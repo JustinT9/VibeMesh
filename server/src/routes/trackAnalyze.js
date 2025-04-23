@@ -11,16 +11,16 @@ const streamPipeline = promisify(pipeline);
 const { 
     retrieveTrackPath, 
     getTrackMetadata
-} = require("../utilities/util"); 
+} = require("../util/util"); 
 
 const { 
     uploadTrackAnalysisToS3Bucket, 
     getTrackAnalysisFromS3Bucket
-} = require("../utilities/S3"); 
+} = require("../util/s3"); 
 
 require("dotenv").config(); 
 
-const getAccessToken = async() => {
+const getAccessToken = async() => { 
     try {
         console.log("In getAccessToken()"); 
         const auth     = Buffer.from(`${process.env.TRACK_ANALYZE_KEY}:${process.env.TRACK_ANALYZE_SECRET}`).toString("base64"); 

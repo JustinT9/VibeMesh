@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { 
+    useState, 
+    useEffect
+} from "react";
 import {
     Instrumentals, 
     GenrePieChartData, 
@@ -17,12 +20,15 @@ import {
 import { 
     PieChart, 
     BarChart, 
-    Gauge
+    Gauge,
+    gaugeClasses
 } from '@mui/x-charts'; 
 import "./TrackAnalysis.css"; 
+import image from "./waveform.png"
 
 function TrackAnalysis() {
     const [track, setTrack] = useState<Track>(); 
+    const [trackPath, setTrackPath] = useState<string>(); 
     const [trackCoverImage, setTrackCoverImage] = useState<string>(); 
     const [genrePieChartData, setGenrePieChartData] = useState<GenrePieChartData>(); 
     const [instrumentalBarChartData, setInstrumentalBarChartData] = useState<Instrumentals>();
@@ -82,16 +88,38 @@ function TrackAnalysis() {
 
             const trackCoverImageMetadata: TrackCoverImage = await response.json(); 
             const image: string | undefined = `data:${trackCoverImageMetadata.format};base64,${trackCoverImageMetadata.data}`;
-            
+
             setTrackCoverImage(image); 
         } catch (error: Error | any) {
             console.log(error); 
         }
     }   
 
+    const getTrackMP3FilePath = async(): Promise<void> => {
+        try {
+            const trackname: string = localStorage.getItem("current-track") ?? ""; 
+            const response: Response = await fetch(`http://localhost:5000/api/track-info/track-path/${trackname}`, {
+                method: "GET", 
+                headers: {
+                    "Accept": "application/json"
+                }
+            }); 
+
+            if (!response.ok) {
+                throw new Error(`status: ${response.status}`);
+            }
+
+            const trackpath: string = await response.json(); 
+            setTrackPath(trackpath); 
+        } catch (error: Error | any) {
+            console.log(error); 
+        }
+    }
+
     useEffect(() => {
         getTrackAnalysis(); 
         getTrackCoverImage(); 
+        getTrackMP3FilePath(); 
     }, []); 
 
     useEffect(() => {
@@ -99,6 +127,7 @@ function TrackAnalysis() {
             setGenrePieChartData(shapeGenrePieChartData(track));
             setLoudnessGaugeData(track.loudness); 
             console.log(track); 
+            console.log(trackPath);
         }   
     }, [track]); 
 
@@ -139,19 +168,26 @@ function TrackAnalysis() {
 
                     <div className="trackKeysAndLoudness">
                         <Gauge 
-                            height={175}
-                            width={175}
+                            width={225}
                             value={loudnessGaugeData}
                             text={`Loudness: ${loudnessGaugeData}`}
                             valueMin={-35}
                             valueMax={0}
                             startAngle={-90} 
                             endAngle={90}
+                            sx={{
+                                [`& .${gaugeClasses.valueText}`] : {
+                                    fontSize: 12, 
+                                    transform: 'translate(0px, -20px)'
+                                }
+                            }}
                         />
                     </div>
 
-                    <div className="trackPreview">
-
+                    <div className="trackPreview" id="wavesurfer" >
+                            <img 
+                                width={700}
+                                src={image} />
                     </div>
                 </div>
             </div>

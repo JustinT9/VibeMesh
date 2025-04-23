@@ -10,14 +10,14 @@
   },
   "nodemonConfig": {
     "verbose": true,
-    "ignore": [
-      "logs/*",
+    "ignore": [ 
+      "logs/*",  
       "uploads/*"
     ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JustinT9/VibeMesh.git"
+    "url": "git+https://github.com/JustinT9/VibeMesh.git" 
   },
   "keywords": [],
   "author": "",
