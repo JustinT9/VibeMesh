@@ -1,5 +1,25 @@
 const fs = require("fs"); 
 
+/**
+ * Retrieves media usage data from the Dolby API for a specified date range.
+ *
+ * @async
+ * @function
+ * @param {string} accessToken - The authorization token required for making API requests.
+ * @returns {Promise<string>} The formatted media usage data as a string.
+ * 
+ * @throws {Error} If the request to the Dolby API fails or if the response is not OK.
+ * 
+ * Example Response:
+ * ```json
+ * {
+ *   "usage": {
+ *     "total": 12345,
+ *     "usage_details": [ ... ]
+ *   }
+ * }
+ * ```
+ */
 const retrieveMediaUsage = async(accessToken) => {
     try {
         const response = await fetch("https://api.dolby.com/media/usage", {
@@ -26,6 +46,26 @@ const retrieveMediaUsage = async(accessToken) => {
     }
 }; 
 
+/**
+ * Retrieves a list of jobs within a specified date range from the Dolby API and writes the logs to a file.
+ *
+ * @async
+ * @function
+ * @param {string} accessToken - The authorization token required for making API requests.
+ * @param {string} startDate - The start date for retrieving jobs (format: "YYYY-MM-DD").
+ * @param {string} endDate - The end date for retrieving jobs (format: "YYYY-MM-DD").
+ * @returns {Promise<void>} This function does not return any data but writes the logs to a file.
+ *
+ * @throws {Error} If the request to the Dolby API fails or if the response is not OK.
+ *
+ * Example:
+ * The function will create a file at `./logs/jobs.txt` containing the job details in JSON format:
+ * ```json
+ * {
+ *   "jobs": [ ... ]
+ * }
+ * ```
+ */
 const retrieveJobs = async(
     accessToken, 
     startDate, 

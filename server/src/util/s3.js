@@ -21,6 +21,26 @@ aws.config.getCredentials(error => {
 
 const s3 = new aws.S3(); 
 
+/**
+ * Checks if a track analysis file exists in the S3 bucket.
+ *
+ * @async
+ * @function
+ * @param {string} trackName - The name of the track to check for an existing analysis file.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the analysis file exists, `false` if not.
+ *
+ * @throws {Error} If there is an issue querying the S3 bucket.
+ *
+ * Example Response:
+ * ```js
+ * const exists = await doesTrackAnalysisExistinS3Bucket("trackname"); 
+ * if (exists) { 
+ *     console.log("Track analysis exists!"); 
+ * } else { 
+ *     console.log("Track analysis not found!"); 
+ * }
+ * ```
+ */
 const doesTrackAnalysisExistinS3Bucket = async(
     trackName 
 ) => {
@@ -46,6 +66,27 @@ const doesTrackAnalysisExistinS3Bucket = async(
     } 
 }; 
 
+/**
+ * Uploads the track analysis JSON to an S3 bucket.
+ *
+ * @async
+ * @function
+ * @param {string} trackName - The name of the track to upload the analysis for.
+ * @param {string} trackAnalysisJSON - The track analysis data in JSON format to upload.
+ * @returns {Promise<void>} This function does not return any data but uploads the JSON to S3.
+ *
+ * @throws {Error} If the upload to S3 fails.
+ *
+ * Example:
+ * ```js
+ * const trackAnalysisJSON = JSON.stringify({
+ *   name: "trackname", 
+ *   duration: 3.5,
+ *   loudness: -5
+ * });
+ * await uploadTrackAnalysisToS3Bucket("trackname", trackAnalysisJSON);
+ * ```
+ */
 const uploadTrackAnalysisToS3Bucket = async(
     trackName, 
     trackAnalysisJSON 
@@ -70,6 +111,22 @@ const uploadTrackAnalysisToS3Bucket = async(
     }
 }; 
 
+/**
+ * Retrieves the track analysis JSON from the S3 bucket.
+ *
+ * @async
+ * @function
+ * @param {string} trackName - The name of the track for which to retrieve the analysis.
+ * @returns {Promise<Object>} A promise that resolves to the track analysis data as a JavaScript object.
+ *
+ * @throws {Error} If the retrieval from S3 fails.
+ *
+ * Example:
+ * ```js
+ * const trackAnalysisData = await getTrackAnalysisFromS3Bucket("trackname");
+ * console.log(trackAnalysisData);
+ * ```
+ */
 const getTrackAnalysisFromS3Bucket = async(
     trackName 
 ) => {

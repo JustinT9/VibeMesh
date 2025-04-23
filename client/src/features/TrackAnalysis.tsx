@@ -26,6 +26,13 @@ import {
 import "./TrackAnalysis.css"; 
 import image from "./waveform.png"
 
+/**
+ * Component to display full analysis for the currently selected track.
+ * Includes genre distribution, instrumental makeup, loudness, keys, and metadata.
+ *
+ * @component
+ * @returns {JSX.element} Track analysis UI
+ */
 function TrackAnalysis() {
     const [track, setTrack] = useState<Track>(); 
     const [trackPath, setTrackPath] = useState<string>(); 
@@ -34,6 +41,11 @@ function TrackAnalysis() {
     const [instrumentalBarChartData, setInstrumentalBarChartData] = useState<Instrumentals>();
     const [loudnessGaugeData, setLoudnessGaugeData] = useState<Loudness>(0); 
 
+     /**
+     * Fetches track analysis data from the backend and populates state with shaped values.
+     *
+     * @async
+     */
     const getTrackAnalysis = async(): Promise<void> => {
         try {
             const trackname: string = localStorage.getItem("current-track") ?? ""; 
@@ -72,6 +84,11 @@ function TrackAnalysis() {
         }  
     }
 
+    /**
+     * Fetches base64 cover image from the backend and sets image src.
+     *
+     * @async
+     */
     const getTrackCoverImage = async(): Promise<void> => {
         try {
             const trackname: string = localStorage.getItem("current-track") ?? ""; 
@@ -95,6 +112,11 @@ function TrackAnalysis() {
         }
     }   
 
+    /**
+     * Fetches MP3 file path (likely for waveform/audio playback).
+     *
+     * @async
+     */
     const getTrackMP3FilePath = async(): Promise<void> => {
         try {
             const trackname: string = localStorage.getItem("current-track") ?? ""; 

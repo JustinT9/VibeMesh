@@ -16,6 +16,14 @@ const upload                               = multer({ storage: storage });
 const { doesTrackAnalysisExistinS3Bucket } = require("../util/S3"); 
 const { renameUploadedFile } = require("../util/util"); 
 
+/**
+ * Retrieves track analysis from a remote service.
+ *
+ * @async
+ * @function
+ * @param {string} trackname - The track's name.
+ * @returns {Promise<object>} The analysis data of the track.
+ */
 const getTrackAnalysis = async(
     trackname
 ) => {
@@ -39,6 +47,14 @@ const getTrackAnalysis = async(
 
 }; 
 
+/**
+ * Triggers track analysis for a given track.
+ *
+ * @async
+ * @function
+ * @param {string} trackname - The track's name to analyze.
+ * @returns {Promise<object>} The status of the analysis request.
+ */
 const analyzeTrack = async(
     trackname
 ) => {
@@ -65,6 +81,31 @@ const analyzeTrack = async(
     }
 }; 
 
+/**
+ * POST /upload
+ * Handles track file uploads and checks if track analysis exists.
+ * If analysis exists in the S3 bucket, it retrieves and returns it. 
+ * If analysis doesn't exist, it triggers the analysis and then returns the status.
+ *
+ * @route POST /upload
+ * @param {object} req.body - The request body contains the track file uploaded by the user.
+ * @param {object} req.file - The uploaded file object.
+ * @returns {object} JSON response with track analysis status or details.
+ *
+ * Example response:
+ * - If analysis exists: 
+ *   {
+ *     "track": "cool_song",
+ *     "analysisStatus": "success"
+ *   }
+ * - If analysis doesn't exist and has been triggered:
+ *   {
+ *     "track": "cool_song",
+ *     "status": "analysis in progress"
+ *   }
+ * 
+ * @throws {Error} If there's an error during upload, analysis, or retrieval.
+ */
 router.post("/", upload.single("trackFile"), async(req, res) => {  
     try {
         const file = req.file; 

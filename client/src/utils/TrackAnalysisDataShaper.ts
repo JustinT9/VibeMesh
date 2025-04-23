@@ -11,6 +11,12 @@ import {
     Instrumental
 } from "../common/interfaces"
 
+/**
+ * Converts raw key data (from backend or API) into structured `Keys` array.
+ *
+ * @param {Array<any>} keyData - Raw key data as an array of `[major, confidence]`.
+ * @returns {Keys} Array of shaped key objects.
+ */
 const shapeKeyData = (
     keyData: Array<any>
 ): Keys => {
@@ -26,6 +32,12 @@ const shapeKeyData = (
     return shapedKeyData; 
 }; 
 
+/**
+ * Converts raw genre data into structured `Genres` array.
+ *
+ * @param {Array<any>} genreData - Raw genre data as an array of `[type, confidence]`.
+ * @returns {Genres} Array of shaped genre objects.
+ */
 const shapeGenreData = (
     genreData: Array<any> 
 ): Genres => {
@@ -41,6 +53,12 @@ const shapeGenreData = (
     return shapedGenreData; 
 }; 
 
+/**
+ * Normalizes genre confidence values and shapes them for use in a pie chart.
+ *
+ * @param {Track} track - Track object containing genre data.
+ * @returns {GenrePieChartData} Pie chart data with `id`, `value`, and `label`.
+ */
 const shapeGenrePieChartData = (
     track: Track 
 ): GenrePieChartData => {
@@ -58,6 +76,12 @@ const shapeGenrePieChartData = (
     return []; 
 }; 
 
+/**
+ * Normalizes instrumental confidence values and shapes them into chart-ready format.
+ *
+ * @param {Array<any>} instrumentalData - Raw data array `[type, confidence]`.
+ * @returns {Instrumentals} Normalized instrumental data.
+ */
 const shapeInstrumentalData = (
     instrumentalData: Array<any>
 ): Instrumentals => {

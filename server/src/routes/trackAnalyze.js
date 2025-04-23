@@ -20,6 +20,11 @@ const {
 
 require("dotenv").config(); 
 
+/**
+ * Get a Dolby.io access token using client credentials.
+ * @async
+ * @returns {Promise<string>} A valid Dolby.io access token.
+ */
 const getAccessToken = async() => { 
     try {
         console.log("In getAccessToken()"); 
@@ -49,6 +54,13 @@ const getAccessToken = async() => {
     }
 }; 
 
+/**
+ * Request a Dolby.io URL to upload a track to Dolby media storage.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} trackname - Name of the track (without file extension).
+ * @returns {Promise<Object>} Upload URL object.
+ */
 const retrieveUploadURL = async(
     accessToken, 
     trackname 
@@ -78,6 +90,14 @@ const retrieveUploadURL = async(
     } 
 }; 
 
+/**
+ * Upload a local audio track file to Dolby's media storage.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} trackname - Track name.
+ * @param {string} trackPath - Absolute path to the local audio file.
+ * @returns {Promise<void>}
+ */
 const uploadTrackToCloud = async(
     accessToken,    
     trackname, 
@@ -109,6 +129,13 @@ const uploadTrackToCloud = async(
     }
 }; 
 
+/**
+ * Start a Dolby music analysis job on a given uploaded track.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} trackname - Name of the track.
+ * @returns {Promise<string>} Dolby job ID for tracking.
+ */     
 const getTrackJobAnalysisID = async(
     accessToken, 
     trackname
@@ -140,6 +167,13 @@ const getTrackJobAnalysisID = async(
     }
 }; 
 
+/**
+ * Poll Dolby.io for analysis job status until it finishes or fails.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} jobID - Dolby job ID from a previous request.
+ * @returns {Promise<void>}
+ */
 const getTrackJobAnalysisStatus = async(
     accessToken, 
     jobID
@@ -172,6 +206,13 @@ const getTrackJobAnalysisStatus = async(
     }
 }
 
+/**
+ * Request a Dolby.io URL to download the analysis results.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} trackname - Name of the track.
+ * @returns {Promise<Object>} Download URL object.
+ */
 const retrieveDownloadURL = async(
     accessToken, 
     trackname
@@ -201,6 +242,13 @@ const retrieveDownloadURL = async(
     }
 }; 
 
+/**
+ * Download the JSON results of an analysis job and save locally.
+ * @async
+ * @param {string} accessToken - Dolby.io access token.
+ * @param {string} trackname - Track name.
+ * @returns {Promise<void>}
+ */
 const downloadTrackAnalysis = async(
     accessToken, 
     trackname 
@@ -231,7 +279,13 @@ const downloadTrackAnalysis = async(
     }
 };  
 
-const parseTrackAnalysis = async(
+
+/**
+ * Read, parse, and reshape Dolby analysis JSON from local disk.
+ * @async
+ * @param {string} trackname - Name of the track.
+ * @returns {Promise<string>} Parsed and reshaped analysis as JSON string.
+ */rseTrackAnalysis = async(
     trackname
 ) => {
     try {
@@ -260,6 +314,13 @@ const parseTrackAnalysis = async(
     }
 }
 
+/**
+ * GET /:trackname
+ * Retrieves pre-analyzed track metadata from S3.
+ * @route GET /analyze/:trackname
+ * @param {string} trackname - Name of the track file.
+ * @returns {Object} JSON representation of the track analysis.
+ */
 router.get("/:trackname", async(req, res) => {
     try {
         const trackname           = req.params.trackname; 
@@ -273,6 +334,13 @@ router.get("/:trackname", async(req, res) => {
     }
 }); 
 
+/**
+ * POST /
+ * Uploads and analyzes a track using Dolby.io, then saves to S3.
+ * @route POST /analyze/
+ * @param {string} req.body.trackname - Track name.
+ * @returns {Object} JSON response of parsed analysis.
+ */
 router.post("/", async(req, res) => {
     try {
         const trackname = req.body.trackname; 
